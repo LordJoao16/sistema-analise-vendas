@@ -48,7 +48,7 @@ No Windows PowerShell, ative o ambiente virtual:
 Em seguida, instale as dependências:
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install -r requirements.txt 
 ```
 
 ### 3. Iniciar a aplicação
