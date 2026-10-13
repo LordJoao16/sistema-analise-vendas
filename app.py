@@ -93,38 +93,97 @@ else:
     st.dataframe(exibicao, use_container_width=True, hide_index=True)
 
 
-    st.subheader("Editar uma venda")
-    opcoes = {
-        f"ID {int(r.id)} — {r.produto} — {r.data_venda}": int(r.id)
-        for r in vendas.itertuples(index=False)
-    }
-    escolha = st.selectbox("Selecione a venda para editar", list(opcoes.keys()))
+   
+
+st.subheader("Editar uma venda")
+
+opcoes = {
+    f"ID {int(r.id)} — {r.produto} — {r.data_venda}": int(r.id)
+    for r in vendas.itertuples(index=False)
+}
+
+if not opcoes:
+    st.info("Não existem vendas para editar.")
+else:
+    escolha = st.selectbox(
+        "Selecione a venda para editar",
+        list(opcoes.keys()),
+        key="escolha_edicao",
+    )
+
     id_edicao = opcoes[escolha]
     atual = vendas.loc[vendas["id"] == id_edicao].iloc[0]
 
-    with st.form("formulario_edicao"):
+    # Cada venda terá chaves próprias para os campos do formulário.
+    chave_produto = f"produto_editado_{id_edicao}"
+    chave_quantidade = f"quantidade_editada_{id_edicao}"
+    chave_preco = f"preco_editado_{id_edicao}"
+    chave_data = f"data_editada_{id_edicao}"
+
+    with st.form(f"formulario_edicao_{id_edicao}"):
         c1, c2 = st.columns(2)
+
         with c1:
-            produto_editado = st.text_input("Produto", value=str(atual["produto"]), key="produto_editado")
-            quantidade_editada = st.number_input("Quantidade", min_value=1, max_value=100000, value=int(atual["quantidade"]), step=1, key="quantidade_editada")
+            produto_editado = st.text_input(
+                "Produto",
+                value=str(atual["produto"]),
+                key=chave_produto,
+            )
+
+            quantidade_editada = st.number_input(
+                "Quantidade",
+                min_value=1,
+                max_value=100000,
+                value=int(atual["quantidade"]),
+                step=1,
+                key=chave_quantidade,
+            )
+
         with c2:
-            preco_editado = st.number_input("Preço unitário (R$)", min_value=0.01, max_value=100000000.0, value=float(atual["preco_unitario"]), step=1.00, key="preco_editado")
-            data_editada = st.date_input("Data da venda", value=date.fromisoformat(str(atual["data_venda"])), key="data_editada")
+            preco_editado = st.number_input(
+                "Preço unitário (R$)",
+                min_value=0.01,
+                max_value=100000000.0,
+                value=float(atual["preco_unitario"]),
+                step=1.00,
+                key=chave_preco,
+            )
+
+            data_editada = st.date_input(
+                "Data da venda",
+                value=date.fromisoformat(str(atual["data_venda"])),
+                key=chave_data,
+            )
+
         salvar = st.form_submit_button("Salvar alterações")
+
         if salvar:
             nome = produto_editado.strip()
+
             if not nome:
                 st.error("O nome do produto não pode ficar vazio.")
             else:
                 total = int(quantidade_editada) * float(preco_editado)
+
                 with conectar_banco() as conexao:
                     conexao.execute(
-                        """UPDATE vendas SET produto=?, quantidade=?, preco_unitario=?,
-                        data_venda=?, total=? WHERE id=?""",
-                        (nome, int(quantidade_editada), float(preco_editado), data_editada.isoformat(), total, id_edicao)
+                        """UPDATE vendas
+                        SET produto=?, quantidade=?, preco_unitario=?,
+                            data_venda=?, total=?
+                        WHERE id=?""",
+                        (
+                            nome,
+                            int(quantidade_editada),
+                            float(preco_editado),
+                            data_editada.isoformat(),
+                            total,
+                            id_edicao,
+                        ),
                     )
+
                 st.success("Venda atualizada.")
                 st.rerun()
+
 
    
 st.subheader("Excluir uma venda")
